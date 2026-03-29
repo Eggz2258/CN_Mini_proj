@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 from time import sleep
 from json import dumps,loads
+from datetime import datetime
 # Define the target IP address and port
 UDP_IP = '255.255.255.255'
 UDP_PORT = 5005
@@ -20,26 +21,31 @@ class Server:
         self.flag = True
         
     def enc(self,message):
-        dic = {self.name: message}
+        now = datetime.now()
+        dic = {'Name': self.name,'Message': message,'time': now.strftime('%H:%M:%S.%f'), 'Date':now.strftime('%d-%m-%Y')}
         dic = dumps(dic)
         dic = dic.encode('utf-8')
         return dic
-    def send(self):
+    def send(self,message = None):
         while self.flag:
             sleep(0.1)
-            message = input("message: ")
+            if message == None:
+                message = input("message: ")
             if "quit" in message:
                 self.flag = False
+            if message == 's':
+                self.stream()
             d = self.enc(message)
             sock.sendto(d,Server.addr)
+            message = None
     def recv(self):
         while self.flag:
             data, _ = sock.recvfrom(1024)
             data = data.decode('utf-8')
             data = loads(data)
 
-            name = list(data.keys())[0]
-            value = list(data.values())[0]
+            name = data['Name']
+            value = data['Message']
 
             print(f"{name}: {value}")
 
@@ -48,6 +54,19 @@ class Server:
         self.recver = Thread(target = self.recv)
         self.sender.start()
         self.recver.start()
+
+    def stream(self):
+        file = open('./aud.wav', 'rb')
+        data = file.read()
+        prev = 0
+        for chunk in range(1024,len(data)+1024,1024):
+            print('sending chunk',chunk/1024,'...')
+            meta = self.enc('streaM')
+            meow =meta+data[prev:chunk]
+            sleep(5)
+
+            sock.sendto(meow,Server.addr)
+            prev += 1024
 
 Name = input("Enter your name: ")
 server = Server(Name)
