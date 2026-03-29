@@ -25,20 +25,21 @@ class Client:
 
     @staticmethod
     def sendall(message):
-        d = Client.enc(message)
-        message = d.encode('utf-8')
+        
         for client in Client.client_names:
-            sock.sendto(message, client)
+            print(type(client))
+            client.send(message)
 
     @staticmethod
     def recv():
         data, addr = sock.recvfrom(1024)
-        data = data.decode('utf-8')
         if addr not in Client.client_names:
-            Client.client_names.append(addr)
-        data = loads(data)
+           obj =  Client(addr)
+           Client.client_names.append(obj)
         Client.sendall(data)
-        print(type(data))
+        data = data.decode('utf-8')
+        data = loads(data)
+        print(data)
 
 
 print(sock.getsockname()[0])

@@ -39,8 +39,8 @@ class Server:
         Thread(target = self.send).start()
         Thread(target = self.recv).start()
 
-
-server = Server("Jishnu")
+Name = input("Enter your name: ")
+server = Server(Name)
 print("server started...")
 server.start()
 
