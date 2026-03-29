@@ -1,6 +1,5 @@
 from socket import *
 from json import loads
-print("hello")
 
 host = "0.0.0.0"
 port = 5005
@@ -27,22 +26,29 @@ class Client:
     def sendall(message):
         
         for client in Client.client_names:
-            print(type(client))
+            print(len(Client.client_names))
             client.send(message)
 
     @staticmethod
     def recv():
         data, addr = sock.recvfrom(1024)
-        if addr not in Client.client_names:
+        if addr not in [a.addr for a in Client.client_names]:
            obj =  Client(addr)
            Client.client_names.append(obj)
         Client.sendall(data)
         data = data.decode('utf-8')
         data = loads(data)
+        name = list(data.keys())[0]
+        value = list(data.values())[0]
+
+
+        if 'quit' in value:
+            for i in Client.client_names:
+                if i.addr == addr:
+                    Client.client_names.remove(i)
         print(data)
 
 
-print(sock.getsockname()[0])
 print('listening on', host,port)
 while True:
     Client.recv()
