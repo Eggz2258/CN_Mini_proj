@@ -1,6 +1,8 @@
 from socket import *
 from json import loads
 import pickle
+from time import sleep
+from threading import Thread
 from queue import Queue, Full
 from datetime import datetime
 
@@ -13,7 +15,7 @@ sock = socket(AF_INET,SOCK_DGRAM)
 stream_start = 0
 stream_throughput = 0
 sock.bind((host,port))
-log_queue = Queue(maxsize=20)
+log_queue = Queue(maxsize=10)
 class Client:
     client_names = []
     
@@ -92,23 +94,44 @@ class Client:
         return (res,data)
     @staticmethod
     def recv():
-        raw_data, addr = sock.recvfrom(2048)
-        if addr not in [a.addr for a in Client.client_names]:
-           obj =  Client(addr)
-           Client.client_names.append(obj)
+        global log_queue
+        while True:
+            raw_data, addr = sock.recvfrom(2048)
+            if addr not in [a.addr for a in Client.client_names]:
+                obj =  Client(addr)
+                Client.client_names.append(obj)
         #d = data[0:6].decode('utf-8')
         #
         #print(data.decode('utf-8'))
         #if 'streaM' in d:
         #    Client.stream(data)
         
-        res,data = Client.recv_message(raw_data)
-        if 'quit' in res:
-            for i in Client.client_names:
-                if i.addr == addr:
-                    Client.client_names.remove(i)
-        if data['stream_flag']:
-            Client.stream(raw_data)
+            res,data = Client.recv_message(raw_data)
+            log_queue.put(res)
+            while log_queue.full():
+                print('queue is wating')
+                sleep(1)
+
+            
+            if 'quit' in res:
+                for i in Client.client_names:
+                    if i.addr == addr:
+                        Client.client_names.remove(i)
+            if data['stream_flag']:
+                Client.stream(raw_data)
+
+    @staticmethod
+    def consume():
+        global log_queue
+        while True:
+            if log_queue.full():
+                log_queue.get()
+                print('consumed')
+                sleep(5)
+
+
 print('listening on', host,port)
+Thread(target = Client.recv).start()
+Thread(target = Client.consume).start()
 while True:
-    Client.recv()
+    pass
