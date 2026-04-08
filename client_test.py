@@ -21,9 +21,9 @@ class Server:
         self.name = name
         self.flag = True
         
-    def enc(self,message, data = None):
+    def enc(self,message, data = None, stream_flag = False,siz = None):
         now = datetime.now()
-        dic = {'Name': self.name,'Message': message,'time': now.strftime('%H:%M:%S.%f'), 'Date':now.strftime('%d-%m-%Y'), 'Data' :data}
+        dic = {'Name': self.name,'Message': message,'time': now.strftime('%H:%M:%S.%f'), 'Date':now.strftime('%d-%m-%Y'), 'Data' :data, 'stream_flag': stream_flag,'stream_size' : siz}
         dic = pickle.dumps(dic)
         #dic = dic.encode('utf-8')
         data = None
@@ -37,12 +37,14 @@ class Server:
                 self.flag = False
             if message == 's':
                 self.stream()
+                message = None
+                continue
             d = self.enc(message)
             sock.sendto(d,Server.addr)
             message = None
     def recv(self):
         while self.flag:
-            data, _ = sock.recvfrom(1024)
+            data, _ = sock.recvfrom(2048)
             #data = data.decode('utf-8')
             data = pickle.loads(data)
 
@@ -61,17 +63,16 @@ class Server:
         file = open('./aud.wav', 'rb')
         data = file.read()
         prev = 0
-        sock.sendto(b'Steram Start', Serevr.addr)
+        sock.sendto(self.enc('Stream Start'), Server.addr)
         for chunk in range(1024,len(data)+1024,1024):
             print('sending chunk',chunk/1024,'...')
-            meta = self.enc(f'stream Chunk{chunk/1024}', data =data[prev:chunk])
-            #meow =meta+data[prev:chunk] 
+            meta = self.enc(f'stream Chunk {chunk/1024}', data =data[prev:chunk],stream_flag = True)
             meow = meta
             sleep(0.01)
 
             sock.sendto(meow,Server.addr)
             prev += 1024
-        sock.sendto(b'Stream End', Server.addr)
+        sock.sendto(self.enc('Stream End',siz = chunk), Server.addr)
 
 Name = input("Enter your name: ")
 server = Server(Name)
