@@ -8,14 +8,19 @@ from datetime import datetime
 
 host = "0.0.0.0"
 port = 5005
-
 buffer_size = 2048
 
 sock = socket(AF_INET,SOCK_DGRAM)
+sock.bind((host,port))
+
 stream_start = 0
 stream_throughput = 0
-sock.bind((host,port))
+
+
+#############SOHAM################
 log_queue = Queue(maxsize=10)
+
+
 class Client:
     client_names = []
     
@@ -28,6 +33,10 @@ class Client:
         return dic
     def send(self,message):
         sock.sendto(message,self.addr)
+    
+
+
+    ############################ ME ##################
     @staticmethod
     def stream(raw_data):
 
@@ -39,6 +48,10 @@ class Client:
         file.write(decoded_dict['Data'])
         file.close()
         #print(decoded_dict['Data'])
+
+
+
+
 
     @staticmethod
     def sendall(message):
@@ -52,15 +65,23 @@ class Client:
         data = pickle.loads(data)
         return data
     @staticmethod
+
+    #############MADHU###################
     def logger(data):
         global stream_start
         global stream_throughput
+
+
         Current_info  = datetime.now()
         current_time = float(Current_info.strftime('%S.%f'))
+        
+
         Total_bytes = len(data)
         name = data['Name']
         value = data['Message']
         stream_flag = data['stream_flag']
+        
+
         if value == 'Stream Start':
             stream_start = current_time
             print('stream start',stream_start)
@@ -68,6 +89,9 @@ class Client:
             byt_siz = data['stream_size']
             stream_througput = byt_siz/(stream_start - current_time)
             print('stream through = ', stream_throughput)
+        
+
+        ############### ME ###############
         recv_time =float(data['time'][-9:])
         Total_time = current_time - recv_time
         throughput = Total_bytes / Total_time 
@@ -78,20 +102,28 @@ class Client:
             if data['stream_size']:
                 logfile.write(f"\n Stream Throughput: {stream_throughput}")
             logfile.close()
-#        print("Ttotab bytes: ",Total_bytes)
         print('through: ',throughput,'Bytes per sec')
-#        print(f'total time: {Total_time:.6}' )
-#
+
+
+        #print(f'total time: {Total_time:.6}' )
+        #print("Ttotab bytes: ",Total_bytes)
+
+
     @staticmethod
     def recv_message(raw_data):
         data = Client.decode_dict(raw_data)
         Client.logger(data)
         res = data['Message']
         flag = data['stream_flag']
+
+
         print(data)
         if not flag:
             Client.sendall(raw_data)
         return (res,data)
+
+
+
     @staticmethod
     def recv():
         global log_queue
@@ -100,14 +132,10 @@ class Client:
             if addr not in [a.addr for a in Client.client_names]:
                 obj =  Client(addr)
                 Client.client_names.append(obj)
-        #d = data[0:6].decode('utf-8')
-        #
-        #print(data.decode('utf-8'))
-        #if 'streaM' in d:
-        #    Client.stream(data)
-        
             res,data = Client.recv_message(raw_data)
             log_queue.put(res)
+
+
             while log_queue.full():
                 print('queue is wating')
                 sleep(1)
@@ -120,6 +148,8 @@ class Client:
             if data['stream_flag']:
                 Client.stream(raw_data)
 
+
+
     @staticmethod
     def consume():
         global log_queue
@@ -131,7 +161,12 @@ class Client:
 
 
 print('listening on', host,port)
-Thread(target = Client.recv).start()
+
+
+############SOHAM############
 Thread(target = Client.consume).start()
+
+
 while True:
-    pass
+    Client.recv()
+    continue

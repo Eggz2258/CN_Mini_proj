@@ -2,19 +2,19 @@ import socket
 from threading import Thread
 from time import sleep
 from json import dumps,loads
-
 import pickle
 from datetime import datetime
-# Define the target IP address and port
+
+
+
 UDP_IP = '255.255.255.255'
 UDP_PORT = 5005
 MESSAGE = b"Hello, World!"
 
-# Create the UDP socket
-sock = socket.socket(socket.AF_INET, # Internet
-                     socket.SOCK_DGRAM) # UDP
-
+sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+
 class Server:
     sock = sock
     addr = (UDP_IP,UDP_PORT)
@@ -24,11 +24,14 @@ class Server:
         
     def enc(self,message, data = None, stream_flag = False,siz = None):
         now = datetime.now()
+        
         dic = {'Name': self.name,'Message': message,'time': now.strftime('%H:%M:%S.%f'), 'Date':now.strftime('%d-%m-%Y'), 'Data' :data, 'stream_flag': stream_flag,'stream_size' : siz}
+        
         dic = pickle.dumps(dic)
-        #dic = dic.encode('utf-8')
         data = None
         return dic
+    
+
     def send(self,message = None):
         while self.flag:
             sleep(0.1)
@@ -40,9 +43,14 @@ class Server:
                 self.stream()
                 message = None
                 continue
+            
+
             d = self.enc(message)
             sock.sendto(d,Server.addr)
             message = None
+    
+
+
     def recv(self):
         while self.flag:
             data, _ = sock.recvfrom(2048)
@@ -54,12 +62,16 @@ class Server:
 
             print(f"{name}: {value}")
 
+
     def start(self):
         self.sender = Thread(target = self.send)
         self.recver = Thread(target = self.recv)
         self.sender.start()
         self.recver.start()
 
+
+
+    ################# ME #################
     def stream(self):
         file = open('./aud.wav', 'rb')
         data = file.read()
